@@ -1,1 +1,1572 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>WWJD Together — Bring a Friend</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080604;--bg2:#0F0C08;
+  --gold:#C9973A;--gold-bright:#E8B84B;--gold-dim:rgba(201,151,58,0.25);
+  --cream:#F0E6D0;--cream-dim:rgba(240,230,208,0.6);
+  --wine:#7A1E2E;--wine-bright:#9E2A3F;
+  --text:#EDE0C4;--text-mid:rgba(237,224,196,0.7);--text-soft:rgba(237,224,196,0.36);
+  --border:rgba(201,151,58,0.14);--border2:rgba(201,151,58,0.28);
+  --green:#2A5C2A;--green-bright:#357A35;
+  --blue:#1A3A5C;--blue-bright:#2A5A8C;
+  --r:16px;
+}
+html,body{height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--text);font-family:'Lora',Georgia,serif;display:flex;flex-direction:column;}
+
+/* ambient */
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 55% 35% at 50% 0%,rgba(201,151,58,0.08) 0%,transparent 65%),
+    radial-gradient(ellipse 35% 25% at 85% 95%,rgba(122,30,46,0.09) 0%,transparent 55%),
+    radial-gradient(ellipse 40% 30% at 10% 60%,rgba(26,58,92,0.06) 0%,transparent 55%);}
+
+/* ── HEADER ── */
+#hdr{z-index:20;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:13px 18px 11px;border-bottom:1px solid var(--border);background:rgba(8,6,4,0.97);}
+.hdr-left{display:flex;align-items:center;gap:8px;}
+#hdr h1{font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:0.2em;color:var(--gold-bright);}
+.hdot{width:5px;height:5px;border-radius:50%;background:var(--gold);box-shadow:0 0 7px var(--gold);animation:hdp 2.5s ease-in-out infinite;}
+@keyframes hdp{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:1;transform:scale(1.5)}}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.pill-btn{background:rgba(201,151,58,0.08);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--gold);font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.12em;cursor:pointer;display:flex;align-items:center;gap:5px;touch-action:manipulation;transition:all 0.2s;}
+.pill-btn:active{background:rgba(201,151,58,0.2);}
+.pill-btn.active{background:rgba(201,151,58,0.18);border-color:var(--gold);}
+
+/* ── PROGRESS ── */
+#prog-bar{z-index:20;flex-shrink:0;display:none;flex-direction:row;gap:4px;padding:8px 14px 0;background:rgba(8,6,4,0.97);height:19px;}
+#prog-bar.show{display:flex;}
+.pseg{flex:1;height:2.5px;background:rgba(201,151,58,0.15);border-radius:2px;overflow:hidden;}
+.pfill{height:100%;width:0%;background:var(--gold-bright);border-radius:2px;}
+#prog-bar.paused .pfill{opacity:0.4;}
+
+/* ── PRESENCE BAR ── */
+#presence-bar{z-index:20;flex-shrink:0;display:none;align-items:center;justify-content:center;gap:10px;padding:5px 16px;background:rgba(8,6,4,0.97);border-bottom:1px solid var(--border);height:32px;}
+#presence-bar.show{display:flex;}
+.presence-avatar{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-soft);font-family:'Cinzel',serif;letter-spacing:0.08em;}
+.av-dot{width:8px;height:8px;border-radius:50%;background:var(--gold-dim);flex-shrink:0;}
+.av-dot.online{background:var(--gold-bright);box-shadow:0 0 6px var(--gold);}
+.av-dot.you{background:#4CAF50;box-shadow:0 0 6px #4CAF50;}
+.presence-sep{width:1px;height:14px;background:var(--border);}
+.sync-badge{font-size:10px;color:var(--gold);font-family:'Cinzel',serif;letter-spacing:0.1em;display:flex;align-items:center;gap:4px;}
+.sync-pulse{width:6px;height:6px;border-radius:50%;background:var(--gold-bright);animation:syncpulse 1.2s ease-in-out infinite;}
+@keyframes syncpulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:1;transform:scale(1.3)}}
+
+/* ── MAIN ── */
+#main{flex:1;position:relative;overflow:hidden;z-index:1;}
+
+/* ── SCREENS (shared base) ── */
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;text-align:center;}
+.screen.show{display:flex;}
+
+/* ── HOME ── */
+#home{}
+.home-cross{animation:floatcross 5s ease-in-out infinite;margin-bottom:20px;}
+@keyframes floatcross{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.home-eyebrow{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.24em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+.home-title{font-family:'Cinzel',serif;font-size:clamp(22px,6vw,34px);font-weight:700;color:var(--cream);line-height:1.15;margin-bottom:8px;}
+.home-sub{font-style:italic;font-size:13px;color:var(--text-soft);line-height:1.8;margin-bottom:28px;max-width:300px;}
+
+.mode-cards{display:flex;flex-direction:column;gap:12px;width:100%;max-width:420px;margin-bottom:20px;}
+.mode-card{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;cursor:pointer;touch-action:manipulation;
+  transition:all 0.25s;display:flex;align-items:center;gap:16px;text-align:left;
+}
+.mode-card:active{transform:scale(0.98);}
+.mode-card.solo:hover,.mode-card.solo:active{border-color:rgba(201,151,58,0.4);background:rgba(201,151,58,0.05);}
+.mode-card.together:hover,.mode-card.together:active{border-color:rgba(42,92,140,0.5);background:rgba(42,92,140,0.06);}
+.mode-icon{font-size:28px;flex-shrink:0;}
+.mode-info h3{font-family:'Cinzel',serif;font-size:13px;font-weight:600;color:var(--cream);letter-spacing:0.1em;margin-bottom:3px;}
+.mode-info p{font-size:12px;color:var(--text-soft);line-height:1.6;}
+.mode-badge{display:inline-block;background:rgba(42,92,140,0.3);border:1px solid rgba(42,92,140,0.5);border-radius:6px;padding:2px 7px;font-size:9px;font-family:'Cinzel',serif;color:#7AB8E8;letter-spacing:0.1em;margin-top:5px;}
+
+/* ── SOLO INPUT ── */
+#solo-input{}
+.back-btn{position:absolute;top:16px;left:16px;background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text-soft);font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.1em;cursor:pointer;touch-action:manipulation;}
+.back-btn:active{background:rgba(201,151,58,0.1);}
+.back-btn{touch-action:manipulation;}
+.screen-title{font-family:'Cinzel',serif;font-size:14px;font-weight:600;letter-spacing:0.16em;color:var(--gold-bright);margin-bottom:6px;}
+.screen-sub{font-style:italic;font-size:13px;color:var(--text-soft);margin-bottom:22px;}
+.iwrap{width:100%;max-width:430px;position:relative;margin-bottom:11px;}
+textarea.sit{width:100%;min-height:96px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:14px;padding:13px 15px 46px;font-family:'Lora',serif;font-size:15px;color:var(--text);line-height:1.75;resize:none;outline:none;transition:border-color 0.3s;-webkit-appearance:none;touch-action:pan-y;user-select:text;-webkit-user-select:text;}
+textarea.sit::placeholder{color:var(--text-soft);font-style:italic;}
+textarea.sit:focus{border-color:rgba(201,151,58,0.45);}
+.itools{position:absolute;bottom:9px;left:11px;right:11px;display:flex;align-items:center;justify-content:space-between;}
+.micbtn{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:rgba(201,151,58,0.08);color:var(--gold);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.25s;}
+.micbtn.rec{background:rgba(122,30,46,0.5);border-color:var(--wine-bright);color:#FF8FA0;animation:mpulse 0.8s ease-in-out infinite;}
+@keyframes mpulse{0%,100%{box-shadow:0 0 0 0 rgba(122,30,46,0.5)}50%{box-shadow:0 0 0 7px rgba(122,30,46,0)}}
+.charc{font-size:11px;color:var(--text-soft);font-style:italic;}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:430px;margin-bottom:18px;}
+.chip{background:rgba(201,151,58,0.07);border:1px solid rgba(201,151,58,0.15);border-radius:20px;padding:5px 11px;font-size:12px;color:var(--text-mid);cursor:pointer;font-family:'Lora',serif;font-style:italic;touch-action:manipulation;}
+.chip:active{background:rgba(201,151,58,0.18);color:var(--gold-bright);}
+.action-btn{width:100%;max-width:430px;padding:14px;border:none;border-radius:13px;color:var(--cream);font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;transition:all 0.3s;display:flex;align-items:center;justify-content:center;gap:8px;touch-action:manipulation;}
+.action-btn.wine{background:linear-gradient(135deg,var(--wine),var(--wine-bright));box-shadow:0 4px 22px rgba(122,30,46,0.35);}
+.action-btn.blue{background:linear-gradient(135deg,var(--blue),var(--blue-bright));box-shadow:0 4px 22px rgba(26,58,92,0.4);}
+.action-btn:active{transform:scale(0.98);}
+.action-btn:disabled{opacity:0.45;cursor:not-allowed;pointer-events:none;}
+
+/* ── TOGETHER LOBBY ── */
+#together-lobby{}
+.lobby-panel{width:100%;max-width:400px;display:flex;flex-direction:column;gap:14px;}
+.lobby-section{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--r);padding:18px 20px;}
+.lobby-section h3{font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.18em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;}
+.room-code-display{font-family:'Cinzel',serif;font-size:32px;font-weight:700;color:var(--cream);letter-spacing:0.3em;text-align:center;padding:12px 0;text-shadow:0 0 20px rgba(201,151,58,0.3);}
+.room-hint{font-size:12px;color:var(--text-soft);font-style:italic;text-align:center;line-height:1.7;margin-top:6px;}
+.copy-btn{width:100%;padding:11px;background:rgba(201,151,58,0.1);border:1px solid var(--border2);border-radius:10px;color:var(--gold);font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.14em;cursor:pointer;touch-action:manipulation;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;}
+.copy-btn:active{background:rgba(201,151,58,0.22);}
+.copy-btn{touch-action:manipulation;}
+.join-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-family:'Cinzel',serif;font-size:22px;letter-spacing:0.25em;color:var(--cream);text-align:center;text-transform:uppercase;outline:none;transition:border-color 0.3s;-webkit-appearance:none;user-select:text;-webkit-user-select:text;touch-action:manipulation;}
+.join-input:focus{border-color:rgba(201,151,58,0.45);}
+.join-input{touch-action:manipulation;}
+.join-input::placeholder{font-size:14px;letter-spacing:0.1em;color:var(--text-soft);}
+.or-divider{display:flex;align-items:center;gap:10px;color:var(--text-soft);font-size:11px;font-family:'Cinzel',serif;letter-spacing:0.1em;}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── WAITING ROOM ── */
+#waiting{}
+.waiting-code{font-family:'Cinzel',serif;font-size:48px;font-weight:700;color:var(--gold-bright);letter-spacing:0.35em;margin:16px 0;text-shadow:0 0 30px rgba(201,151,58,0.35);}
+.waiting-avatars{display:flex;gap:18px;justify-content:center;margin:20px 0;}
+.w-avatar{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.w-avatar-ring{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;border:2px solid;}
+.w-avatar-ring.you{border-color:var(--gold);background:rgba(201,151,58,0.12);}
+.w-avatar-ring.friend{border-color:rgba(201,151,58,0.2);background:rgba(201,151,58,0.04);animation:friendwait 2s ease-in-out infinite;}
+@keyframes friendwait{0%,100%{border-color:rgba(201,151,58,0.2)}50%{border-color:rgba(201,151,58,0.5)}}
+.w-avatar-ring.friend.joined{border-color:#4CAF50;background:rgba(76,175,80,0.1);animation:none;}
+.w-avatar-label{font-size:11px;color:var(--text-soft);font-family:'Cinzel',serif;letter-spacing:0.08em;}
+.waiting-status{font-style:italic;font-size:14px;color:var(--text-soft);animation:breathe 2s ease-in-out infinite;}
+@keyframes breathe{0%,100%{opacity:0.5}50%{opacity:1}}
+.start-together-btn{margin-top:20px;width:100%;max-width:340px;}
+
+/* ── TOGETHER INPUT (host sees this after friend joins) ── */
+#together-input{}
+
+/* ── LOADING ── */
+#loading{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;}
+#loading.show{display:flex;}
+.fwrap{position:relative;margin-bottom:26px;}
+.fglow{position:absolute;top:50%;left:50%;transform:translate(-50%,-58%);width:76px;height:76px;background:radial-gradient(circle,rgba(201,151,58,0.3) 0%,transparent 70%);border-radius:50%;animation:fga 1.2s ease-in-out infinite;}
+@keyframes fga{0%,100%{transform:translate(-50%,-58%) scale(1);opacity:0.5}50%{transform:translate(-50%,-58%) scale(1.5);opacity:1}}
+.llabel{font-family:'Cinzel',serif;font-size:12px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;margin-bottom:9px;animation:breathe 2s ease-in-out infinite;}
+.lquote{font-style:italic;font-size:13px;color:var(--text-soft);max-width:270px;line-height:1.8;transition:opacity 0.35s;}
+.together-loading-info{margin-top:18px;display:flex;align-items:center;gap:8px;background:rgba(42,92,140,0.12);border:1px solid rgba(42,92,140,0.25);border-radius:10px;padding:10px 16px;font-size:12px;color:#7AB8E8;font-style:italic;}
+
+/* ── STORY ── */
+#story{position:absolute;inset:0;display:none;}
+#story.show{display:block;}
+.scard{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 26px 90px;text-align:center;opacity:0;transition:opacity 0.5s ease;overflow-y:auto;-webkit-overflow-scrolling:touch;pointer-events:none;}
+.scard.active{opacity:1;}
+.scard.active .pray-choices,.scard.active .pray-yes,.scard.active .pray-no,.scard.active .sreturn-btn,.scard.active button{pointer-events:all;}
+.slabel{font-family:'Cinzel',serif;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:var(--gold);opacity:0.7;margin-bottom:11px;}
+.sicon{font-size:32px;margin-bottom:13px;display:block;}
+.sscripture{font-style:italic;font-size:clamp(16px,4.2vw,20px);color:var(--cream);line-height:1.8;margin-bottom:9px;font-weight:500;max-width:360px;}
+.sref{font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.12em;color:var(--gold);}
+.sbody{font-size:clamp(14px,3.6vw,17px);line-height:2.0;color:var(--text);max-width:380px;}
+.sstepnum{width:38px;height:38px;border-radius:50%;background:var(--wine);color:var(--cream);font-family:'Cinzel',serif;font-size:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 13px;box-shadow:0 0 18px rgba(122,30,46,0.45);}
+.sclosing{font-style:italic;font-size:clamp(15px,4vw,19px);color:var(--gold-bright);line-height:1.85;max-width:360px;}
+.sprayer-prompt{font-size:clamp(17px,4.5vw,21px);color:var(--cream);line-height:1.85;max-width:340px;margin-bottom:28px;font-style:italic;}
+
+/* Together prayer prompt — shows both people's choices */
+.together-prayer-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;max-width:380px;}
+.pray-choices{display:flex;gap:14px;pointer-events:all;}
+.pray-yes,.pray-no{padding:13px 26px;border-radius:50px;font-family:'Cinzel',serif;font-size:13px;font-weight:600;letter-spacing:0.13em;cursor:pointer;border:none;transition:all 0.25s;touch-action:manipulation;}
+.pray-yes{background:linear-gradient(135deg,var(--green),var(--green-bright));color:#fff;box-shadow:0 4px 18px rgba(42,92,42,0.4);}
+.pray-yes:active{transform:scale(0.96);}
+.pray-yes,.pray-no{pointer-events:all;}
+.pray-no{background:rgba(201,151,58,0.1);border:1px solid var(--border);color:var(--gold);}
+.pray-no:active{background:rgba(201,151,58,0.2);}
+.vote-status{display:flex;gap:14px;font-size:12px;color:var(--text-soft);font-family:'Cinzel',serif;letter-spacing:0.08em;}
+.vote-pill{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:20px;padding:5px 12px;}
+.vote-pill.voted{border-color:var(--gold);color:var(--gold);}
+
+/* Reaction floaters — appear when friend navigates */
+.reaction-toast{
+  position:fixed;top:80px;left:50%;transform:translateX(-50%);
+  background:rgba(42,92,140,0.85);border:1px solid rgba(42,92,140,0.5);
+  border-radius:20px;padding:7px 16px;
+  font-size:12px;color:#7AB8E8;font-family:'Cinzel',serif;letter-spacing:0.08em;
+  z-index:50;pointer-events:none;
+  animation:toastIn 0.3s ease, toastOut 0.4s ease 1.8s forwards;
+  white-space:nowrap;
+}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0}}
+
+.sprayline{font-style:italic;font-size:clamp(15px,4vw,19px);color:var(--cream);line-height:1.95;max-width:370px;}
+.sencourage{font-size:clamp(15px,4vw,18px);color:var(--text);line-height:2.0;max-width:370px;}
+.sencourage-title{font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;opacity:0.8;}
+.inline-loading{display:flex;flex-direction:column;align-items:center;gap:14px;}
+.mini-spinner{width:28px;height:28px;border:2px solid rgba(201,151,58,0.2);border-top-color:var(--gold-bright);border-radius:50%;animation:spin 0.9s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.inline-loading p{font-size:13px;color:var(--text-soft);font-style:italic;}
+.sreturn{display:flex;flex-direction:column;align-items:center;gap:16px;max-width:340px;}
+.sreturn-title{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.18em;color:var(--gold);text-transform:uppercase;margin-bottom:4px;}
+.sreturn-msg{font-style:italic;font-size:clamp(14px,3.8vw,17px);color:var(--text-mid);line-height:1.9;text-align:center;}
+.sreturn-btn{padding:14px 32px;background:linear-gradient(135deg,var(--wine),var(--wine-bright));border:none;border-radius:12px;color:var(--cream);font-family:'Cinzel',serif;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(122,30,46,0.35);touch-action:manipulation;transition:all 0.25s;pointer-events:all;}
+.sreturn-btn:active{transform:scale(0.97);}
+
+/* ── TOUCH ZONES ── */
+#tz-left{position:absolute;top:0;left:0;bottom:0;width:35%;z-index:10;cursor:pointer;touch-action:none;}
+#tz-right{position:absolute;top:0;right:0;bottom:0;width:65%;z-index:10;cursor:pointer;touch-action:none;}
+.flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 0.12s;z-index:11;}
+#flash-left{background:linear-gradient(to right,rgba(201,151,58,0.14),transparent);}
+#flash-right{background:linear-gradient(to left,rgba(201,151,58,0.14),transparent);}
+#pause-veil{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;}
+
+/* ── FAB ── */
+#fabs{position:absolute;bottom:18px;left:0;right:0;display:none;flex-direction:row;justify-content:flex-start;padding:0 16px;z-index:20;}
+#fabs.show{display:flex;}
+.fab{padding:10px 16px;border-radius:50px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:0.11em;cursor:pointer;display:flex;align-items:center;gap:6px;border:none;transition:all 0.22s;touch-action:manipulation;}
+.fab-new{background:rgba(201,151,58,0.1);border:1px solid var(--border);color:var(--gold);}
+.fab-new:active{background:rgba(201,151,58,0.22);}
+
+/* ── HINT ── */
+#hint{position:absolute;bottom:76px;left:50%;transform:translateX(-50%);background:rgba(8,6,4,0.85);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:11px;color:var(--text-soft);letter-spacing:0.05em;font-style:italic;white-space:nowrap;z-index:20;opacity:0;transition:opacity 0.5s;pointer-events:none;}
+#hint.show{opacity:1;}
+
+/* ── MIC ── */
+#micindicator{display:none;position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(90,20,30,0.92);border-bottom:2px solid rgba(255,140,160,0.4);padding:10px;text-align:center;font-size:13px;color:#FF9AAE;font-style:italic;letter-spacing:0.07em;backdrop-filter:blur(8px);pointer-events:all;touch-action:manipulation;}
+#micindicator.show{display:block;}
+
+@keyframes flicker{0%{transform:scaleX(1) scaleY(1)}100%{transform:scaleX(0.87) scaleY(0.93) translateY(1px)}}
+</style>
+</head>
+<body>
+
+<div id="micindicator" onclick="stopMic()" style="cursor:pointer;">🎙️ Listening… tap here to stop</div>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div class="hdr-left">
+    <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
+      <rect x="9" y="1" width="4" height="20" rx="1.5" fill="url(#hcg)"/>
+      <rect x="1" y="7" width="20" height="4" rx="1.5" fill="url(#hcg)"/>
+      <defs><linearGradient id="hcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8B84B"/><stop offset="100%" stop-color="#C9973A"/></linearGradient></defs>
+    </svg>
+    <h1>WHAT WOULD JESUS DO</h1>
+    <div class="hdot"></div>
+  </div>
+  <div class="hdr-right">
+    <button class="pill-btn" id="together-mode-btn" onclick="goToTogether()">
+      👥 Together
+    </button>
+  </div>
+</div>
+
+<!-- PRESENCE BAR (shows during co-session) -->
+<div id="presence-bar">
+  <div class="presence-avatar">
+    <div class="av-dot you" id="av-you"></div>
+    <span id="av-you-label">You</span>
+  </div>
+  <div class="presence-sep"></div>
+  <div class="sync-badge">
+    <div class="sync-pulse"></div>
+    <span id="sync-label">LIVE</span>
+  </div>
+  <div class="presence-sep"></div>
+  <div class="presence-avatar">
+    <div class="av-dot" id="av-friend"></div>
+    <span id="av-friend-label">Waiting…</span>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div id="prog-bar"></div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- HOME -->
+  <div class="screen show" id="home">
+    <div class="home-cross">
+      <svg width="46" height="46" viewBox="0 0 52 52" fill="none">
+        <rect x="22" y="4" width="8" height="44" rx="3" fill="url(#icg)"/>
+        <rect x="4" y="16" width="44" height="8" rx="3" fill="url(#icg)"/>
+        <defs><linearGradient id="icg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8B84B"/><stop offset="100%" stop-color="#C9973A"/></linearGradient></defs>
+      </svg>
+    </div>
+    <div class="home-eyebrow">Seek His Wisdom</div>
+    <h2 class="home-title">What Would<br/>Jesus Do?</h2>
+    <p class="home-sub">"Come to me, all who are weary and burdened, and I will give you rest." — Matthew 11:28</p>
+
+    <div class="mode-cards">
+      <div class="mode-card solo" onclick="goSolo()">
+        <div class="mode-icon">🙏</div>
+        <div class="mode-info">
+          <h3>Just Me & Jesus</h3>
+          <p>Seek His guidance alone. Share your situation and walk through His word in 60 seconds.</p>
+        </div>
+      </div>
+      <div class="mode-card together" onclick="goToTogether()">
+        <div class="mode-icon">👥</div>
+        <div class="mode-info">
+          <h3>Bring a Friend</h3>
+          <p>Face it together. Invite someone and experience the same guidance at the same time.</p>
+          <div class="mode-badge">✨ NEW</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOLO INPUT -->
+  <div class="screen" id="solo-input">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <div class="screen-title">Share Your Situation</div>
+    <p class="screen-sub" style="margin-bottom:20px">"Ask and it will be given to you." — Matthew 7:7</p>
+    <div class="iwrap">
+      <textarea class="sit" id="sit-solo" placeholder="Share what's on your heart… a decision, a conflict, a fear, a temptation." maxlength="800"></textarea>
+      <div class="itools">
+        <button class="micbtn" id="micbtn" type="button" onclick="toggleMic('sit-solo')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <span class="charc" id="charc-solo">0 / 800</span>
+      </div>
+    </div>
+    <div class="chips">
+      <div class="chip" onclick="setChip('sit-solo',this)">I want to lie to protect myself</div>
+      <div class="chip" onclick="setChip('sit-solo',this)">Should I forgive them?</div>
+      <div class="chip" onclick="setChip('sit-solo',this)">I'm consumed by jealousy</div>
+      <div class="chip" onclick="setChip('sit-solo',this)">I want to retaliate</div>
+      <div class="chip" onclick="setChip('sit-solo',this)">I feel hopeless</div>
+    </div>
+    <button class="action-btn wine" id="solo-seek-btn" onclick="startSolo()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      Seek His Guidance
+    </button>
+  </div>
+
+  <!-- TOGETHER LOBBY -->
+  <div class="screen" id="together-lobby">
+    <button class="back-btn" onclick="goHome()">← Back</button>
+    <div class="screen-title" style="margin-bottom:4px">Bring a Friend</div>
+    <p class="screen-sub" style="margin-bottom:20px">"For where two or three gather in my name, there am I with them." — Matthew 18:20</p>
+
+    <div class="lobby-panel">
+      <!-- Create room -->
+      <div class="lobby-section">
+        <h3>Create a Room</h3>
+        <div class="room-code-display" id="my-room-code">—</div>
+        <div class="room-hint">Share this code with your friend. They enter it below to join your session.</div>
+        <button class="copy-btn" onclick="copyRoomCode()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          <span id="copy-btn-label">Copy Code to Share</span>
+        </button>
+        <button class="action-btn blue" style="margin-top:10px" onclick="hostWait()">
+          Wait for Friend →
+        </button>
+      </div>
+
+      <div class="or-divider">OR</div>
+
+      <!-- Join room -->
+      <div class="lobby-section">
+        <h3>Join a Friend's Room</h3>
+        <input class="join-input" id="join-code-input" type="text" maxlength="4" placeholder="Enter code" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"/>
+        <button class="action-btn wine" style="margin-top:12px" onclick="joinRoom()">
+          Join Their Session →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WAITING ROOM (host) -->
+  <div class="screen" id="waiting">
+    <div class="screen-title">Waiting for Your Friend</div>
+    <div class="waiting-code" id="waiting-code">—</div>
+
+    <div class="waiting-avatars">
+      <div class="w-avatar">
+        <div class="w-avatar-ring you">🙏</div>
+        <div class="w-avatar-label">You</div>
+      </div>
+      <div style="font-size:24px;color:var(--text-soft);align-self:center">·····</div>
+      <div class="w-avatar">
+        <div class="w-avatar-ring friend" id="friend-avatar-ring">👤</div>
+        <div class="w-avatar-label" id="friend-avatar-label">Waiting…</div>
+      </div>
+    </div>
+
+    <div class="waiting-status" id="waiting-status">Share the code above with your friend</div>
+
+    <div class="iwrap" style="max-width:340px;margin-top:18px">
+      <textarea class="sit" id="sit-together" placeholder="While you wait — share your situation here. Your friend will see it too." maxlength="800" style="min-height:80px;touch-action:pan-y;user-select:text;-webkit-user-select:text;"></textarea>
+      <div class="itools">
+        <button class="micbtn" id="micbtn-t" type="button" onclick="toggleMic('sit-together')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <span class="charc" id="charc-t">0 / 800</span>
+      </div>
+    </div>
+
+    <button class="action-btn blue start-together-btn" id="start-together-btn" onclick="startTogether()" disabled style="opacity:0.4;pointer-events:none;">
+      Start Together →
+    </button>
+    <button class="back-btn" style="position:static;margin-top:10px;display:inline-flex" onclick="goToTogether()">← Back</button>
+  </div>
+
+  <!-- FRIEND JOINED (guest view — waiting for host to start) -->
+  <div class="screen" id="guest-waiting">
+    <span style="font-size:40px;margin-bottom:16px">🤝</span>
+    <div class="screen-title">You're Connected!</div>
+    <p style="font-style:italic;font-size:14px;color:var(--text-soft);margin-top:8px;line-height:1.8;max-width:280px;">Your friend is preparing the session. It will begin shortly — take a breath and still your heart.</p>
+    <div class="waiting-status" style="margin-top:20px">Waiting for your friend to start…</div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading">
+    <div class="fwrap">
+      <div class="fglow"></div>
+      <svg width="46" height="60" viewBox="0 0 48 64" fill="none">
+        <ellipse cx="24" cy="62" rx="13" ry="2.2" fill="rgba(201,151,58,0.13)"/>
+        <rect x="14" y="26" width="20" height="36" rx="5" fill="url(#lcb)"/>
+        <rect x="22" y="18" width="4" height="10" rx="2" fill="#3A2810"/>
+        <ellipse cx="24" cy="16" rx="7" ry="10" fill="url(#lcf)" style="animation:flicker 0.5s ease-in-out infinite alternate"/>
+        <defs>
+          <linearGradient id="lcb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0E6D0"/><stop offset="100%" stop-color="#D4C4A0"/></linearGradient>
+          <radialGradient id="lcf" cx="50%" cy="90%"><stop offset="0%" stop-color="#FFFAD0"/><stop offset="50%" stop-color="#E8B84B"/><stop offset="100%" stop-color="rgba(201,80,20,0.3)"/></radialGradient>
+        </defs>
+      </svg>
+    </div>
+    <div class="llabel">Seeking in scripture…</div>
+    <div class="lquote" id="lquote">"Ask and it will be given to you." — Matthew 7:7</div>
+    <div class="together-loading-info" id="together-loading-info" style="display:none">
+      👥 Preparing shared session for both of you…
+    </div>
+  </div>
+
+  <!-- STORY -->
+  <div id="story">
+    <div id="pause-veil"></div>
+    <div class="flash" id="flash-left"></div>
+    <div class="flash" id="flash-right"></div>
+    <div id="tz-left"></div>
+    <div id="tz-right"></div>
+    <div id="fabs">
+      <button class="fab fab-new" onclick="resetApp()">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        New
+      </button>
+    </div>
+    <div id="hint">← back &nbsp;·&nbsp; hold to pause &nbsp;·&nbsp; tap right →</div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+/* ============================================================
+   API CONFIGURATION
+============================================================ */
+const ANTHROPIC_API_KEY = ''
+
+/* ========================================================
+   STATE
+============================================================ */
+let cards = [], cur = 0, paused = false, elapsed = 0, rafId = null, lastTs = null;
+let recognition = null, isRec = false;
+let situation = '';
+let sessionMode = 'solo'; // 'solo' | 'host' | 'guest'
+let roomCode = '';
+let isHost = false;
+let friendJoined = false;
+let myVote = null; // 'yes' | 'no' | null
+let friendVote = null;
+let sbChannel = null;      // Supabase Realtime channel
+let myId = null;           // random UUID for this session participant
+let hostPollInterval = null;
+
+// ── SUPABASE CLIENT ──
+const SUPABASE_URL = 'https://dvhuvobfbhydzglbkfth.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR2aHV2b2JmYmh5ZHpnbGJrZnRoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NzQyOTIsImV4cCI6MjA5MzE1MDI5Mn0.hfSjORbLDnuNwntbhfaF0BnK-keOwqT8juOPNxdtdEk';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  },
+  global: {
+    headers: { 'X-Client-Info': 'wwjd-app' }
+  }
+});
+
+// Generate a random participant ID
+function genId() {
+  return Math.random().toString(36).slice(2,10).toUpperCase();
+}
+
+const DURATION = 12000;
+const LQUOTES = [
+  '"Ask and it will be given to you." — Matthew 7:7',
+  '"Trust in the Lord with all your heart." — Proverbs 3:5',
+  '"Be still and know that I am God." — Psalm 46:10',
+  '"Come to me, all who are weary." — Matthew 11:28',
+  '"I am the way, the truth, and the life." — John 14:6',
+];
+
+/* ============================================================
+   SCREEN MANAGEMENT
+============================================================ */
+function showScreen(id) {
+  // Hide all screens and loading
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('show');
+    s.style.display = 'none';
+  });
+  const ld = document.getElementById('loading');
+  if (ld) { ld.classList.remove('show'); ld.style.display = 'none'; }
+  // Hide story too
+  const st = document.getElementById('story');
+  if (st) { st.classList.remove('show'); st.style.display = 'none'; }
+  document.getElementById('prog-bar').style.display = 'none';
+  document.getElementById('prog-bar').classList.remove('show');
+
+  if (id === 'loading') {
+    ld.style.display = 'flex';
+    ld.classList.add('show');
+    return;
+  }
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = 'flex';
+  el.classList.add('show');
+}
+
+function showStory() {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('show');
+    s.style.display = 'none';
+  });
+  const ld = document.getElementById('loading');
+  if (ld) { ld.classList.remove('show'); ld.style.display = 'none'; }
+  document.getElementById('story').style.display = 'block';
+  document.getElementById('story').classList.add('show');
+  document.getElementById('prog-bar').style.display = 'flex';
+  document.getElementById('prog-bar').classList.add('show');
+  document.getElementById('fabs').classList.add('show');
+}
+
+/* ============================================================
+   NAVIGATION
+============================================================ */
+function goHome() {
+  closeChannel(); // removes Supabase channel
+  stopRAF();
+  stopQuoteRotation();
+  document.getElementById('presence-bar').classList.remove('show');
+  document.getElementById('prog-bar').classList.remove('show');
+  document.getElementById('prog-bar').style.display = 'none';
+  document.getElementById('fabs').classList.remove('show');
+  // Reset story screen
+  document.getElementById('story').style.display = 'none';
+  document.getElementById('story').classList.remove('show');
+  document.getElementById('story').querySelectorAll('.scard').forEach(e => e.remove());
+  document.getElementById('prog-bar').innerHTML = '';
+  // Reset buttons
+  const sb = document.getElementById('solo-seek-btn');
+  if (sb) sb.disabled = false;
+  // Reset state
+  cards = []; cur = 0; paused = false; elapsed = 0;
+  myVote = null; friendVote = null; sessionMode = 'solo';
+  isHost = false; friendJoined = false;
+  showScreen('home');
+}
+function goSolo()      { sessionMode = 'solo';  showScreen('solo-input'); }
+function goToTogether(){ generateRoomCode(); showScreen('together-lobby'); }
+
+/* ============================================================
+   ROOM CODE
+============================================================ */
+function generateRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  roomCode = Array.from({length:4}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+  document.getElementById('my-room-code').textContent = roomCode;
+  document.getElementById('copy-btn-label').textContent = 'Copy Code to Share';
+}
+
+function copyRoomCode() {
+  const codeOnly = roomCode;
+  const text = 'Join my WWJD session! Code: ' + codeOnly + ' — Open the app and tap Bring a Friend to enter this code.';
+
+  function onSuccess() {
+    const btn = document.getElementById('copy-btn-label');
+    if (btn) btn.textContent = '✓ Copied!';
+    setTimeout(() => { if (btn) btn.textContent = 'Copy Code to Share'; }, 2500);
+    showToast('✓ Code copied — share it with your friend!');
+  }
+
+  function fallbackCopy() {
+    // execCommand fallback — works in all browsers including WebViews
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:2px;height:2px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) {}
+    document.body.removeChild(ta);
+    if (ok) { onSuccess(); }
+    else { window.prompt('Copy this code and share with your friend:', text); }
+  }
+
+  // Try native share sheet first (mobile)
+  if (navigator.share) {
+    navigator.share({ title: 'Join my WWJD session', text: text })
+      .then(onSuccess)
+      .catch(fallbackCopy);
+    return;
+  }
+
+  // Try Clipboard API
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallbackCopy);
+    return;
+  }
+
+  fallbackCopy();
+}
+
+/* ============================================================
+   HOST FLOW
+============================================================ */
+async function hostWait() {
+  isHost = true;
+  sessionMode = 'host';
+  document.getElementById('waiting-code').textContent = roomCode;
+  showScreen('waiting');
+
+  // Wait until Supabase channel is fully subscribed before sending anything
+  await openChannel(roomCode);
+
+  // Now safe to announce — channel is guaranteed SUBSCRIBED
+  channelSend({ type:'host-ready', room: roomCode });
+
+  // Re-announce every 5s in case friend joins later
+  hostPollInterval = setInterval(() => {
+    if (!friendJoined) channelSend({ type:'host-ready', room: roomCode });
+  }, 5000);
+
+  // Track textarea char count
+  const ta = document.getElementById('sit-together');
+  ta.addEventListener('input', () => {
+    document.getElementById('charc-t').textContent = ta.value.length + ' / 800';
+  });
+}
+
+function startTogether() {
+  situation = document.getElementById('sit-together').value.trim();
+  if (!situation) {
+    document.getElementById('sit-together').style.borderColor = 'rgba(122,30,46,0.6)';
+    setTimeout(() => document.getElementById('sit-together').style.borderColor = '', 1500);
+    return;
+  }
+  clearInterval(hostPollInterval);
+  // Tell guest session is starting and share the situation
+  channelSend({ type:'session-start', room: roomCode, situation });
+  document.getElementById('together-loading-info').style.display = 'flex';
+  seekWisdom();
+}
+
+/* ============================================================
+   GUEST FLOW
+============================================================ */
+async function joinRoom() {
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  if (code.length !== 4) {
+    document.getElementById('join-code-input').style.borderColor = 'rgba(122,30,46,0.6)';
+    setTimeout(() => document.getElementById('join-code-input').style.borderColor = '', 1500);
+    return;
+  }
+  roomCode = code;
+  isHost = false;
+  sessionMode = 'guest';
+
+  showScreen('guest-waiting');
+  document.getElementById('presence-bar').classList.add('show');
+
+  // Wait until channel is fully subscribed — then send
+  await openChannel(code);
+
+  // Safe to send — SUBSCRIBED is confirmed
+  channelSend({ type:'friend-joined', room: code });
+
+  // Keep announcing every 5s in case host missed it
+  hostPollInterval = setInterval(() => {
+    if (!friendJoined) channelSend({ type:'friend-joined', room: code });
+  }, 5000);
+}
+
+/* ============================================================
+   SUPABASE REALTIME — cross-device live sync
+============================================================ */
+
+let isChannelReady = false;
+let messageQueue = [];  // holds messages sent before channel is ready
+
+function openChannel(code) {
+  closeChannel();
+  myId = genId();
+  isChannelReady = false;
+  messageQueue = [];
+
+  return new Promise((resolve) => {
+    // Use a unique channel name with timestamp to avoid stale connections
+    const channelName = 'wwjd:' + code;
+
+    sbChannel = sb.channel(channelName, {
+      config: {
+        broadcast: { self: false, ack: false },
+        presence:  { key: myId }
+      }
+    });
+
+    // Listen for broadcast messages from other participants
+    sbChannel
+      .on('broadcast', { event: 'msg' }, ({ payload }) => {
+        handleChannelMessage(payload);
+      })
+      // Presence lets us know when others join/leave
+      .on('presence', { event: 'join' }, ({ key }) => {
+        if (key !== myId) {
+          console.log('Participant joined:', key);
+          if (!isHost) {
+            // Guest: re-announce to host
+            channelSend({ type: 'friend-joined', room: code });
+          }
+        }
+      });
+
+    // Subscribe with timeout fallback
+    const subTimeout = setTimeout(() => {
+      console.warn('Realtime subscription timed out — using polling fallback');
+      isChannelReady = true; // allow REST fallback via polling
+      showToast('⚡ Connected (fallback mode)');
+      startPollingFallback(code);
+      resolve();
+    }, 8000);
+
+    sbChannel.subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        clearTimeout(subTimeout);
+        isChannelReady = true;
+        console.log('Supabase Realtime connected:', channelName);
+        showToast('🔗 Connected to room ' + code);
+
+        // Flush queued messages
+        const queued = [...messageQueue];
+        messageQueue = [];
+        queued.forEach(payload => {
+          sbChannel.send({ type: 'broadcast', event: 'msg', payload });
+        });
+
+        // Track presence so others know we are here
+        sbChannel.track({ user: myId, joined: Date.now() });
+
+        resolve();
+
+      } else if (status === 'CHANNEL_ERROR') {
+        clearTimeout(subTimeout);
+        console.error('Realtime channel error:', err);
+        // Don't block the app — switch to polling fallback
+        isChannelReady = true;
+        showToast('⚡ Connected (fallback mode)');
+        startPollingFallback(code);
+        resolve();
+
+      } else if (status === 'TIMED_OUT') {
+        clearTimeout(subTimeout);
+        isChannelReady = true;
+        showToast('⚡ Connected (fallback mode)');
+        startPollingFallback(code);
+        resolve();
+
+      } else if (status === 'CLOSED') {
+        isChannelReady = false;
+      }
+    });
+  });
+}
+
+/* ── POLLING FALLBACK (REST-based sync when Realtime WebSocket fails) ──
+   Stores messages in Supabase DB table and polls every 2 seconds.
+   Requires a 'wwjd_messages' table — created automatically via upsert.
+   Falls back gracefully if table doesn't exist.
+*/
+let pollingInterval = null;
+let lastPollTs = Date.now();
+let usingPolling = false;
+
+function startPollingFallback(code) {
+  if (usingPolling) return;
+  usingPolling = true;
+  console.log('Starting REST polling fallback for room:', code);
+
+  pollingInterval = setInterval(async () => {
+    try {
+      const { data } = await sb
+        .from('wwjd_messages')
+        .select('*')
+        .eq('room', code)
+        .gt('created_at', new Date(lastPollTs - 500).toISOString())
+        .order('created_at', { ascending: true });
+
+      if (data && data.length > 0) {
+        lastPollTs = Date.now();
+        data.forEach(row => {
+          if (row.sender_id !== myId) {
+            handleChannelMessage(row.payload);
+          }
+        });
+      }
+    } catch(e) {
+      // Table may not exist yet — silently ignore
+    }
+  }, 2000);
+}
+
+function stopPollingFallback() {
+  clearInterval(pollingInterval);
+  pollingInterval = null;
+  usingPolling = false;
+}
+
+async function channelSendREST(payload) {
+  // Used by polling fallback to write messages to DB
+  try {
+    await sb.from('wwjd_messages').insert({
+      room:       payload.room || roomCode,
+      sender_id:  myId,
+      payload:    payload,
+      created_at: new Date().toISOString()
+    });
+  } catch(e) {
+    console.warn('REST send failed — table may not exist. Run SQL setup in Supabase.');
+  }
+}
+
+function closeChannel() {
+  isChannelReady = false;
+  messageQueue = [];
+  usingPolling = false;
+  stopPollingFallback();
+  if (sbChannel) {
+    sb.removeChannel(sbChannel);
+    sbChannel = null;
+  }
+  clearInterval(hostPollInterval);
+}
+
+async function channelSend(data) {
+  if (!sbChannel && !usingPolling) return;
+  const payload = { ...data, senderId: myId };
+
+  if (!isChannelReady) {
+    messageQueue.push(payload);
+    return;
+  }
+
+  // If using polling fallback — write to DB instead
+  if (usingPolling) {
+    await channelSendREST(payload);
+    return;
+  }
+
+  try {
+    await sbChannel.send({
+      type:    'broadcast',
+      event:   'msg',
+      payload
+    });
+  } catch(err) {
+    console.warn('Realtime send failed, trying REST:', err.message);
+    await channelSendREST(payload);
+  }
+}
+
+function handleChannelMessage(msg) {
+  if (!msg || msg.room !== roomCode) return;
+  if (msg.senderId === myId) return; // ignore own messages
+
+  switch(msg.type) {
+
+    case 'host-ready':
+      if (!isHost) {
+        document.getElementById('presence-bar').classList.add('show');
+        document.getElementById('av-friend').classList.add('online');
+        document.getElementById('av-friend-label').textContent = 'Host';
+        // Tell host we're here
+        channelSend({ type:'friend-joined', room: roomCode });
+      }
+      break;
+
+    case 'friend-joined':
+      if (isHost && !friendJoined) {
+        friendJoined = true;
+        clearInterval(hostPollInterval);
+        document.getElementById('friend-avatar-ring').classList.add('joined');
+        document.getElementById('friend-avatar-ring').textContent = '🙏';
+        document.getElementById('friend-avatar-label').textContent = 'Friend';
+        document.getElementById('waiting-status').textContent = '🙏 Your friend has joined! Start when ready.';
+        const stBtn = document.getElementById('start-together-btn');
+        stBtn.disabled = false;
+        stBtn.style.opacity = '1';
+        stBtn.style.pointerEvents = 'auto';
+        document.getElementById('presence-bar').classList.add('show');
+        document.getElementById('av-friend').classList.add('online');
+        document.getElementById('av-friend-label').textContent = 'Friend';
+        showToast('🙏 Your friend has joined!');
+      }
+      break;
+
+    case 'session-start':
+      if (!isHost) {
+        situation = msg.situation;
+        document.getElementById('together-loading-info').style.display = 'flex';
+        showScreen('loading');
+        rotateQuotes();
+      }
+      break;
+
+    case 'cards-ready':
+      if (!isHost) {
+        cards = msg.cards;
+        stopQuoteRotation();
+        renderProgressBar();
+        renderCards();
+        showStory();
+        showHint();
+        cur = 0; paused = false; elapsed = 0;
+        jumpTo(0, false);
+      }
+      break;
+
+    case 'nav':
+      if (!isHost) {
+        if (msg.action === 'jump') {
+          jumpTo(msg.index, false);
+          showToast('👥 Your friend moved the story');
+        } else if (msg.action === 'pause') {
+          pauseStory(false);
+          showToast('✋ Your friend paused');
+        } else if (msg.action === 'resume') {
+          resumeStory(false);
+          showToast('▶️ Your friend resumed');
+        }
+      }
+      break;
+
+    case 'prayer-vote':
+      if (msg.from !== (isHost ? 'host' : 'guest')) {
+        friendVote = msg.vote;
+        updateVoteUI();
+        checkBothVoted();
+      }
+      break;
+
+    case 'prayer-cards-ready':
+      if (!isHost) {
+        const fromIdx = msg.fromIndex;
+        // Splice in new cards
+        cards = cards.slice(0, fromIdx).concat(msg.newCards);
+        rebuildFromIndex(fromIdx);
+      }
+      break;
+  }
+}
+
+function showToast(msg) {
+  document.querySelectorAll('.reaction-toast').forEach(t => t.remove());
+  const toast = document.createElement('div');
+  toast.className = 'reaction-toast';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 2400);
+}
+
+/* ============================================================
+   VOICE INPUT
+============================================================ */
+let activeMicTarget = null;
+
+function toggleMic(targetId) {
+  // If already recording — stop
+  if (isRec) { stopMic(); return; }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    showMicUnsupported();
+    return;
+  }
+
+  // Request microphone permission explicitly first
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(() => startRecognition(targetId))
+      .catch(err => {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          showToast('🎙️ Microphone permission denied — please allow it in your browser settings');
+        } else {
+          // Permission might already be granted, try anyway
+          startRecognition(targetId);
+        }
+      });
+  } else {
+    // Fallback — try directly (some browsers don't need getUserMedia first)
+    startRecognition(targetId);
+  }
+}
+
+function startRecognition(targetId) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+
+  activeMicTarget = targetId;
+  const ta = document.getElementById(targetId);
+  if (!ta) return;
+
+  try {
+    recognition = new SR();
+    recognition.lang = navigator.language || 'en-US';
+    recognition.continuous = false;       // false is more reliable on mobile
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    let finalT = ta.value ? ta.value.trim() + ' ' : '';
+
+    recognition.onstart = () => {
+      isRec = true;
+      // Update the specific mic button for this target
+      const wrap = ta.closest('.iwrap');
+      if (wrap) wrap.querySelector('.micbtn').classList.add('rec');
+      document.getElementById('micindicator').classList.add('show');
+      document.getElementById('micindicator').textContent = '🎙️ Listening… speak now';
+    };
+
+    recognition.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const transcript = e.results[i][0].transcript;
+        if (e.results[i].isFinal) {
+          finalT += transcript + ' ';
+        } else {
+          interim = transcript;
+        }
+      }
+      ta.value = (finalT + interim).trim();
+      ta.dispatchEvent(new Event('input'));
+    };
+
+    recognition.onerror = e => {
+      console.warn('Speech recognition error:', e.error);
+      if (e.error === 'not-allowed') {
+        showToast('🎙️ Microphone blocked — check browser permissions');
+      } else if (e.error === 'no-speech') {
+        showToast('🎙️ No speech detected — try again');
+      } else if (e.error === 'network') {
+        showToast('🎙️ Network error — voice needs internet');
+      }
+      stopMic();
+    };
+
+    recognition.onend = () => {
+      // Auto-stop when speech ends — on mobile, recognition often stops itself
+      if (isRec) {
+        // On mobile: recognition stops after silence — just clean up
+        stopMic();
+      }
+    };
+
+    recognition.start();
+
+  } catch(err) {
+    console.error('Recognition start error:', err);
+    showToast('🎙️ Could not start voice input — try typing instead');
+    stopMic();
+  }
+}
+
+function stopMic() {
+  isRec = false;
+  activeMicTarget = null;
+  document.querySelectorAll('.micbtn').forEach(b => b.classList.remove('rec'));
+  const ind = document.getElementById('micindicator');
+  if (ind) ind.classList.remove('show');
+  if (recognition) {
+    try { recognition.abort(); } catch(e) {}
+    try { recognition.stop(); } catch(e) {}
+    recognition = null;
+  }
+}
+
+function showMicUnsupported() {
+  // Show a friendly inline message instead of alert
+  const msg = 'Voice input needs Chrome or Safari. Type your situation instead.';
+  showToast('🎙️ ' + msg);
+}
+function setChip(id, el) {
+  const ta = document.getElementById(id);
+  ta.value = el.textContent;
+  ta.dispatchEvent(new Event('input'));
+}
+document.getElementById('sit-solo').addEventListener('input', e => {
+  document.getElementById('charc-solo').textContent = e.target.value.length + ' / 800';
+});
+
+/* ============================================================
+   SOLO START
+============================================================ */
+function startSolo() {
+  situation = document.getElementById('sit-solo').value.trim();
+  if (!situation) {
+    document.getElementById('sit-solo').style.borderColor = 'rgba(122,30,46,0.6)';
+    setTimeout(() => document.getElementById('sit-solo').style.borderColor = '', 1500);
+    return;
+  }
+  stopMic();
+  document.getElementById('solo-seek-btn').disabled = true;
+  seekWisdom();
+}
+
+/* ============================================================
+   SEEK WISDOM (API)
+============================================================ */
+async function seekWisdom() {
+  showScreen('loading');
+  rotateQuotes();
+
+  try {
+    const isTogether = sessionMode !== 'solo';
+    const sys = `You are a Bible-grounded spiritual guide whose every word is anchored in Jesus Christ — His life, His teachings, His death and resurrection, and the fullness of Scripture.
+
+CORE RULES:
+1. Every response must be EXPLICITLY centred on Jesus Christ — His name, His character, His specific words or actions from the Gospels.
+2. Every piece of guidance must be BACKED BY SCRIPTURE with accurate book, chapter and verse.
+3. Draw primarily from Jesus's own words: Sermon on the Mount (Matthew 5-7), His parables, John 14-17.
+4. Be specific to their situation using real biblical examples — e.g. "just as Jesus forgave Peter (John 21:15-17)…"
+5. Never moralize or shame. Lead with grace AND truth (John 1:14).
+6. "what_jesus_would_do" must describe what Jesus ACTUALLY DID in similar Gospel situations.${isTogether ? '\n7. This is a SHARED session — two people are experiencing this together. Occasionally acknowledge this: use "both of you", "together", "as you face this side by side". Make it feel like a shared journey.' : ''}
+
+Respond ONLY with valid JSON (no markdown, no backticks, no preamble):
+{
+  "scripture": { "verse": "exact text", "reference": "Book Chapter:Verse" },
+  "understanding": "2-3 sentences. Show you hear them. Reference a Gospel moment of compassion.",
+  "what_jesus_would_do": "3-4 sentences grounded in what Jesus ACTUALLY DID. Name the specific story.",
+  "steps": [
+    "Step 1 with a scripture reference inline",
+    "Step 2 — heart level, scripture anchored",
+    "Step 3 — surrender, Jesus as source, with verse"
+  ],
+  "closing_truth": "Direct quote from Jesus's lips with reference in brackets.",
+  "prayer_prompt": "${isTogether ? 'A warm invitation for BOTH people to pray together — acknowledge their shared moment.' : 'A warm personal invitation to pray.'}"
+}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST', headers:{
+        'Content-Type':'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-request-origin': 'https://super-lily-20febc.netlify.app'
+      },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1100, system:sys, messages:[{role:'user', content:'My situation: '+situation}] })
+    });
+
+    stopQuoteRotation();
+    const data   = await resp.json();
+    const raw    = data.content.map(b => b.text||'').join('');
+    const parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    buildStory(parsed);
+
+  } catch(err) {
+    stopQuoteRotation();
+    console.error(err);
+    goHome();
+    document.getElementById('solo-seek-btn').disabled = false;
+  const stb = document.getElementById('start-together-btn');
+  if (stb) { stb.disabled = true; stb.style.opacity = '0.4'; stb.style.pointerEvents = 'none'; }
+  const jci = document.getElementById('join-code-input');
+  if (jci) jci.value = '';
+    alert('Something went quiet. Check your connection and try again.');
+  }
+}
+
+/* ============================================================
+   BUILD STORY
+============================================================ */
+function buildStory(data) {
+  const isTogether = sessionMode !== 'solo';
+  cards = [
+    { type:'scripture', label:'His Word',         icon:'✝️', verse:data.scripture.verse, ref:data.scripture.reference },
+    { type:'body',      label:'He Hears You',     icon:'🫂', body:data.understanding },
+    { type:'body',      label:'What He Would Do', icon:'👣', body:data.what_jesus_would_do },
+    ...data.steps.map((s,i) => ({ type:'step', label:`Step ${i+1} of ${data.steps.length}`, num:i+1, body:s })),
+    { type:'closing',   label:'Hold On To This',  icon:'🕊️', body:data.closing_truth },
+    { type:'prayerprompt', prompt:data.prayer_prompt, together:isTogether }
+  ];
+
+  renderProgressBar();
+  renderCards();
+
+  // If host in together mode — broadcast cards to guest via Supabase
+  if (isHost && sessionMode === 'host') {
+    channelSend({ type:'cards-ready', room:roomCode, cards });
+  }
+
+  showStory();
+  showHint();
+  cur = 0; paused = false; elapsed = 0;
+  jumpTo(0);
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+function renderProgressBar() {
+  const pb = document.getElementById('prog-bar');
+  pb.innerHTML = cards.map((_,i) => `<div class="pseg"><div class="pfill" id="pf${i}"></div></div>`).join('');
+  pb.classList.add('show');
+}
+
+function renderCards() {
+  document.getElementById('story').querySelectorAll('.scard').forEach(el => el.remove());
+  const pauseVeil = document.getElementById('pause-veil');
+  cards.forEach((c,i) => {
+    const div = document.createElement('div');
+    div.className = 'scard'; div.id = 'sc'+i;
+    div.innerHTML = makeCardHTML(c, i);
+    document.getElementById('story').insertBefore(div, pauseVeil);
+  });
+}
+
+function makeCardHTML(c) {
+  if (c.type === 'scripture')    return `<div class="slabel">${c.label}</div><span class="sicon">${c.icon}</span><div class="sscripture">"${c.verse}"</div><span class="sref">— ${c.ref}</span>`;
+  if (c.type === 'body')         return `<div class="slabel">${c.label}</div><span class="sicon">${c.icon}</span><div class="sbody">${c.body}</div>`;
+  if (c.type === 'step')         return `<div class="slabel">${c.label}</div><div class="sstepnum">${c.num}</div><div class="sbody">${c.body}</div>`;
+  if (c.type === 'closing')      return `<div class="slabel">${c.label}</div><span class="sicon">${c.icon||'🕊️'}</span><div class="sclosing">"${c.body}"</div>`;
+  if (c.type === 'prayerloading') return `<div class="slabel">Preparing your prayer</div><div class="inline-loading"><div class="mini-spinner"></div><p>Speaking it over you…</p></div>`;
+  if (c.type === 'prayerline')   return `<div class="slabel">🙏 Prayer</div><div class="sprayline">${c.body}</div>`;
+  if (c.type === 'encourageloading') return `<div class="slabel">A word for you</div><div class="inline-loading"><div class="mini-spinner"></div><p>He has a word for you…</p></div>`;
+  if (c.type === 'encouragement') return `<div class="sencourage-title">God's Heart For You</div>${c.icon?`<span class="sicon">${c.icon}</span>`:''}<div class="sencourage">${c.body}</div>`;
+  if (c.type === 'returnhome')   return `<div class="sreturn"><div class="sreturn-title">Session Complete</div><span class="sicon">${c.icon||'✝️'}</span><div class="sreturn-msg">${c.msg}</div><button class="sreturn-btn" onclick="resetApp()">Return Home</button></div>`;
+
+  if (c.type === 'prayerprompt') {
+    const togetherVotes = c.together ? `
+      <div class="vote-status">
+        <div class="vote-pill" id="my-vote-pill">🙏 You: waiting</div>
+        <div class="vote-pill" id="friend-vote-pill">👥 Friend: waiting</div>
+      </div>` : '';
+    return `
+      <div class="slabel">A Moment Together</div>
+      <span class="sicon">🙏</span>
+      <div class="sprayer-prompt">"${c.prompt}"</div>
+      <div class="together-prayer-wrap">
+        <div class="pray-choices">
+          <button class="pray-yes" onclick="castVote('yes')">Yes, let's pray</button>
+          <button class="pray-no"  onclick="castVote('no')">Not right now</button>
+        </div>
+        ${togetherVotes}
+      </div>`;
+  }
+  return '';
+}
+
+/* ============================================================
+   TOGETHER PRAYER VOTING
+============================================================ */
+function castVote(vote) {
+  myVote = vote;
+  document.querySelectorAll('.pray-yes,.pray-no').forEach(b => b.disabled = true);
+
+  const myPill = document.getElementById('my-vote-pill');
+  if (myPill) { myPill.textContent = `🙏 You: ${vote === 'yes' ? 'Yes ✓' : 'Not now'}`; myPill.classList.add('voted'); }
+
+  if (sessionMode !== 'solo') {
+    channelSend({ type:'prayer-vote', room:roomCode, vote, from: isHost ? 'host' : 'guest' })
+      .then(() => checkBothVoted());
+  } else {
+    // Solo — just proceed immediately
+    handlePrayerChoice(vote === 'yes');
+  }
+}
+
+function updateVoteUI() {
+  const fp = document.getElementById('friend-vote-pill');
+  if (fp && friendVote) { fp.textContent = `👥 Friend: ${friendVote === 'yes' ? 'Yes ✓' : 'Not now'}`; fp.classList.add('voted'); }
+}
+
+function checkBothVoted() {
+  if (myVote && friendVote) {
+    const goToPrayer = myVote === 'yes' || friendVote === 'yes'; // if either says yes, pray together
+    setTimeout(() => handlePrayerChoice(goToPrayer), 600);
+  }
+}
+
+async function handlePrayerChoice(wantsPrayer) {
+  stopRAF();
+  if (wantsPrayer) await loadPrayer();
+  else await loadEncouragement();
+}
+
+/* ============================================================
+   PRAYER
+============================================================ */
+async function loadPrayer() {
+  const isTog = sessionMode !== 'solo';
+  const loadIdx = cards.length;
+  cards.push({type:'prayerloading'});
+  addCard(loadIdx); addProgressSeg(loadIdx); jumpTo(loadIdx);
+
+  try {
+    const sys = `You are writing a deeply personal, scripture-rooted prayer in the name of Jesus Christ.${isTog ? ' This prayer is for TWO people praying TOGETHER — use "us", "we", "both of us". Acknowledge their shared journey.' : ''}
+
+RULES:
+1. Every line anchored in Scripture — quote or reference accurately.
+2. Pray to God the Father through Jesus Christ. Use His name.
+3. Reference Hebrews 4:14-16 as the basis for confidence.
+4. Name the actual struggle specifically.
+5. Each line: 2-3 sentences. Personal, warm, theologically sound.
+
+Respond ONLY with valid JSON (no markdown, no backticks):
+{"lines":["Opening — address God, reference His character for their situation","Second — name the struggle honestly, echo Psalm of lament or Jesus's comfort","Third — petition with Jesus's specific promises (John 14:27, James 1:5, Phil 4:13)","Closing — declaration of faith in finished work. End: In Jesus's name, Amen."]}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-request-origin':'https://super-lily-20febc.netlify.app'}, body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:[{role:'user',content:'Situation: '+situation}]}) });
+    const data   = await resp.json();
+    const parsed = JSON.parse(data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim());
+
+    cards.splice(loadIdx, 1);
+    parsed.lines.forEach(l => cards.push({type:'prayerline', body:l}));
+    cards.push({type:'closing',icon:'✝️',label:'Amen',body:'Now may the God of peace equip you with everything good — through Jesus Christ, to whom be glory for ever and ever. (Hebrews 13:20-21)'});
+    addReturnCard();
+    rebuildFromIndex(loadIdx);
+  } catch(err) {
+    console.error(err);
+    cards.splice(loadIdx,1);
+    ['Father, I come boldly to Your throne of grace through Jesus Christ, my High Priest who understands every weakness (Hebrews 4:15-16). You see all things. I lay this before You now.',
+     'Your Word says You are close to the broken-hearted (Psalm 34:18). Jesus, You said "Come to me, all who are weary" (Matthew 11:28) — and so I come, just as I am.',
+     'I receive the peace You promised — not as the world gives (John 14:27). Guard my heart and mind in Christ Jesus (Philippians 4:7).',
+     'I trust You who began a good work in me will complete it (Philippians 1:6). Not my will, but Yours. In Jesus\'s name, Amen.'
+    ].forEach(l => cards.push({type:'prayerline',body:l}));
+    addReturnCard();
+    rebuildFromIndex(loadIdx);
+  }
+}
+
+async function loadEncouragement() {
+  const loadIdx = cards.length;
+  cards.push({type:'encourageloading'});
+  addCard(loadIdx); addProgressSeg(loadIdx); jumpTo(loadIdx);
+
+  try {
+    const sys = `You are delivering biblical encouragement rooted entirely in Jesus Christ and Scripture to someone who said "not right now" to prayer.
+
+RULES:
+1. Every line cites a specific scripture with reference.
+2. Jesus must be central — what He did, said, who He is.
+3. Speak to their EXACT situation and emotion.
+4. Reference real Bible figures who faced the same.
+5. Close with the most tender promise of Jesus that fits.
+
+Respond ONLY valid JSON (no markdown): {"icon":"emoji","lines":["Romans 8:38-39 anchored love declaration personal to their situation","Gospel moment where Jesus entered same pain — John 11:35, Heb 4:15","Forward-facing hope with specific promise — Isaiah 43:2, John 16:33","One tender closing sentence with Jesus quote and reference"]}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-request-origin':'https://super-lily-20febc.netlify.app'}, body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:600,system:sys,messages:[{role:'user',content:'Their situation: '+situation}]}) });
+    const data   = await resp.json();
+    const parsed = JSON.parse(data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim());
+
+    cards.splice(loadIdx,1);
+    parsed.lines.forEach((l,i) => cards.push({type:'encouragement',icon:i===0?parsed.icon:'',body:l}));
+    addReturnCard();
+    rebuildFromIndex(loadIdx);
+  } catch(err) {
+    console.error(err);
+    cards.splice(loadIdx,1);
+    [{icon:'💛',body:'Neither death nor life, nor anything in all creation, can separate you from the love of God that is in Christ Jesus our Lord (Romans 8:38-39). Not this moment. Nothing.'},
+     {icon:'🕊️',body:'Jesus wept (John 11:35). He was tempted in every way, yet without sin (Hebrews 4:15). He does not stand above your pain — He entered it. You are not alone.'},
+     {icon:'🌅',body:'"In this world you will have trouble. But take heart! I have overcome the world." — Jesus (John 16:33). The One who overcame is with you right now.'}
+    ].forEach(c => cards.push({type:'encouragement',...c}));
+    addReturnCard();
+    rebuildFromIndex(loadIdx);
+  }
+}
+
+function addReturnCard() {
+  cards.push({type:'returnhome',icon:'✝️',msg:'You have sought His face today. That matters. "Go in peace" — the same words Jesus spoke to all who came to Him (Luke 7:50).'});
+}
+
+/* ============================================================
+   CARD / PROGRESS HELPERS
+============================================================ */
+function addCard(index) {
+  const c = cards[index], story = document.getElementById('story'), pv = document.getElementById('pause-veil');
+  const div = document.createElement('div'); div.className='scard'; div.id='sc'+index;
+  div.innerHTML = makeCardHTML(c); story.insertBefore(div, pv);
+}
+function addProgressSeg(index) {
+  const pb = document.getElementById('prog-bar');
+  const seg = document.createElement('div'); seg.className='pseg';
+  seg.innerHTML = `<div class="pfill" id="pf${index}"></div>`; pb.appendChild(seg);
+}
+function rebuildFromIndex(from) {
+  const story = document.getElementById('story'), pb = document.getElementById('prog-bar'), pv = document.getElementById('pause-veil');
+  for (let i = from; i < cards.length+10; i++) {
+    const e = document.getElementById('sc'+i); if(e) e.remove();
+    const p = document.getElementById('pf'+i); if(p) p.parentElement.remove();
+  }
+  for (let i = from; i < cards.length; i++) {
+    const div = document.createElement('div'); div.className='scard'; div.id='sc'+i;
+    div.innerHTML = makeCardHTML(cards[i]); story.insertBefore(div, pv);
+    const seg = document.createElement('div'); seg.className='pseg';
+    seg.innerHTML = `<div class="pfill" id="pf${i}"></div>`; pb.appendChild(seg);
+  }
+  jumpTo(from, false);
+
+  // If host — sync new prayer/encourage cards to guest
+  if (isHost && sessionMode === 'host') {
+    setTimeout(() => {
+      channelSend({
+        type: 'prayer-cards-ready',
+        room: roomCode,
+        fromIndex: from,
+        newCards: cards.slice(from)
+      });
+    }, 200);
+  }
+}
+
+/* ============================================================
+   PROGRESS ENGINE
+============================================================ */
+function startRAF() {
+  cancelAnimationFrame(rafId); lastTs = null;
+  function tick(ts) {
+    if (paused) return;
+    if (lastTs===null) lastTs=ts;
+    elapsed += ts - lastTs; lastTs = ts;
+    const ctype = cards[cur]&&cards[cur].type;
+    if (ctype==='prayerprompt'||ctype==='returnhome') { rafId=requestAnimationFrame(tick); return; }
+    const fill = document.getElementById('pf'+cur);
+    if (fill) fill.style.width = Math.min(100,(elapsed/DURATION)*100)+'%';
+    if (elapsed >= DURATION) goForward();
+    else rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+}
+function stopRAF() { cancelAnimationFrame(rafId); rafId=null; lastTs=null; }
+
+function jumpTo(index, broadcast=true) {
+  index = Math.max(0, Math.min(index, cards.length-1));
+  cur=index; elapsed=0; paused=false;
+  cards.forEach((_,i) => { const el=document.getElementById('sc'+i); if(el) el.classList.toggle('active',i===index); });
+  cards.forEach((_,i) => { const f=document.getElementById('pf'+i); if(!f)return; f.style.transition='none'; f.style.width=(i<index)?'100%':'0%'; });
+  const ctype = cards[index]&&cards[index].type;
+  const hide = ctype==='prayerprompt'||ctype==='returnhome';
+  document.getElementById('tz-left').style.display  = hide?'none':'block';
+  document.getElementById('tz-right').style.display = hide?'none':'block';
+  document.getElementById('prog-bar').classList.remove('paused');
+  stopRAF(); startRAF();
+  if (broadcast && isHost && sessionMode==='host') channelSend({type:'nav',room:roomCode,action:'jump',index});
+}
+
+function goForward(broadcast=true) {
+  stopRAF();
+  if (cur < cards.length-1) jumpTo(cur+1, broadcast);
+  else { const f=document.getElementById('pf'+cur); if(f) f.style.width='100%'; }
+  if (broadcast && isHost) channelSend({type:'nav',room:roomCode,action:'jump',index:Math.min(cur,cards.length-1)});
+}
+function goBack(broadcast=true) {
+  stopRAF();
+  if (elapsed>DURATION*0.25||cur===0) jumpTo(cur,broadcast);
+  else jumpTo(cur-1,broadcast);
+}
+function pauseStory(broadcast=true) {
+  if (paused) return; paused=true; stopRAF();
+  document.getElementById('prog-bar').classList.add('paused');
+  if (broadcast && isHost) channelSend({type:'nav',room:roomCode,action:'pause'});
+}
+function resumeStory(broadcast=true) {
+  if (!paused) return; paused=false;
+  document.getElementById('prog-bar').classList.remove('paused');
+  lastTs=null; startRAF();
+  if (broadcast && isHost) channelSend({type:'nav',room:roomCode,action:'resume'});
+}
+
+/* ============================================================
+   TOUCH
+============================================================ */
+let holdTimer=null,isHolding=false,ptrMoved=false,ptrStartX=0,ptrStartY=0,ptrDownTime=0;
+function attachZone(el,side) {
+  el.addEventListener('pointerdown',e=>{
+    e.preventDefault(); ptrStartX=e.clientX; ptrStartY=e.clientY;
+    ptrDownTime=Date.now(); ptrMoved=false; isHolding=false;
+    clearTimeout(holdTimer); holdTimer=setTimeout(()=>{isHolding=true;pauseStory();},200);
+  });
+  el.addEventListener('pointermove',e=>{
+    if(Math.abs(e.clientX-ptrStartX)>8||Math.abs(e.clientY-ptrStartY)>8){ptrMoved=true;clearTimeout(holdTimer);}
+  });
+  el.addEventListener('pointerup',e=>{
+    e.preventDefault(); clearTimeout(holdTimer);
+    if(isHolding){isHolding=false;resumeStory();return;}
+    if(ptrMoved||Date.now()-ptrDownTime>700)return;
+    if(side==='left'){document.getElementById('flash-left').style.opacity='1';setTimeout(()=>document.getElementById('flash-left').style.opacity='0',140);goBack();}
+    else{document.getElementById('flash-right').style.opacity='1';setTimeout(()=>document.getElementById('flash-right').style.opacity='0',140);goForward();}
+  });
+  el.addEventListener('pointercancel',()=>{clearTimeout(holdTimer);if(isHolding){isHolding=false;resumeStory();}});
+}
+attachZone(document.getElementById('tz-left'),'left');
+attachZone(document.getElementById('tz-right'),'right');
+
+/* ============================================================
+   QUOTE ROTATION
+============================================================ */
+let quoteInterval=null;
+function rotateQuotes(){
+  let qi=0; const qEl=document.getElementById('lquote');
+  quoteInterval=setInterval(()=>{qEl.style.opacity='0';setTimeout(()=>{qi=(qi+1)%LQUOTES.length;qEl.textContent=LQUOTES[qi];qEl.style.opacity='1';},350);},3200);
+}
+function stopQuoteRotation(){clearInterval(quoteInterval);}
+function showHint(){const h=document.getElementById('hint');h.classList.add('show');setTimeout(()=>h.classList.remove('show'),4500);}
+
+/* ============================================================
+   RESET
+============================================================ */
+function resetApp() {
+  stopRAF(); stopQuoteRotation(); closeChannel();
+  paused=false; elapsed=0; cards=[]; cur=0; myVote=null; friendVote=null;
+  sessionMode='solo'; isHost=false; friendJoined=false;
+  const pb=document.getElementById('prog-bar');
+  pb.innerHTML=''; pb.classList.remove('show','paused'); pb.style.display='none';
+  document.getElementById('story').querySelectorAll('.scard').forEach(e=>e.remove());
+  document.getElementById('story').style.display='none';
+  document.getElementById('story').classList.remove('show');
+  document.getElementById('fabs').classList.remove('show');
+  document.getElementById('hint').classList.remove('show');
+  document.getElementById('presence-bar').classList.remove('show');
+  document.getElementById('tz-left').style.display='block';
+  document.getElementById('tz-right').style.display='block';
+  document.getElementById('sit-solo').value='';
+  document.getElementById('charc-solo').textContent='0 / 800';
+  document.getElementById('solo-seek-btn').disabled=false;
+  document.getElementById('together-loading-info').style.display='none';
+  showScreen('home');
+}
+
+/* INIT */
+showScreen('home');
+</script>
+</body>
+</html>
