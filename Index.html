@@ -1279,7 +1279,7 @@ Respond ONLY with valid JSON. No markdown. No backticks. No preamble.
     const jci = document.getElementById('join-code-input');
     if (jci) jci.value = '';
 
-    alert('Something went quiet. Please try again.');
+    alert('Error: ' + err.message);
   }
 }
 
