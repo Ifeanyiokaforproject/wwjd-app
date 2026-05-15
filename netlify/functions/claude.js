@@ -1,9 +1,4 @@
-// Netlify serverless function — secure proxy for Anthropic API
-// The API key lives here on the server only, never in the browser
-// Deployed automatically by Netlify when this file is in netlify/functions/
-
 exports.handler = async (event) => {
-
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -11,31 +6,31 @@ exports.handler = async (event) => {
     'Content-Type': 'application/json',
   };
 
-  // Handle preflight CORS request
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 200, headers, body: '' };
   }
 
-  // Only allow POST
   if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
+    return {
+      statusCode: 405,
+      headers,
+      body: JSON.stringify({ error: 'Method not allowed' }),
+    };
   }
 
-  // Check API key is configured
   const apiKey = process.env.ANTHROPIC_API_KEY;
+
   if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY environment variable not set');
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Server configuration error' })
+      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY is missing in Netlify' }),
     };
   }
 
   try {
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || '{}');
 
-    // Forward request to Anthropic
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -46,20 +41,22 @@ exports.handler = async (event) => {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
+    const text = await response.text();
 
     return {
       statusCode: response.status,
       headers,
-      body: JSON.stringify(data),
+      body: text,
     };
 
   } catch (err) {
-    console.error('Proxy error:', err.message);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: 'Internal server error' }),
+      body: JSON.stringify({
+        error: 'Proxy error',
+        details: err.message,
+      }),
     };
   }
 };
