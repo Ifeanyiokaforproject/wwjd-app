@@ -43,7 +43,10 @@ exports.handler = async (event) => {
 
     const text = await response.text();
 
-    return {
+console.log('Anthropic status:', response.status);
+console.log('Anthropic response:', text);
+
+return {
       statusCode: response.status,
       headers,
       body: text,
