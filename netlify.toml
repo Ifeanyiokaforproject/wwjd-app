@@ -1,0 +1,21 @@
+build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Permissions-Policy = "microphone=*"
+    Access-Control-Allow-Origin = "*"
+
+# Route /api/claude to the serverless function
+[[redirects]]
+  from = "/api/claude"
+  to = "/.netlify/functions/claude"
+  status = 200
+
+# Single page app routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
