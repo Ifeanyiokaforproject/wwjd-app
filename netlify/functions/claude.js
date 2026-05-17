@@ -1,4 +1,8 @@
+// Netlify serverless function — secure proxy for Anthropic API
+// API key is stored in Netlify environment variables, never exposed to browser
+
 exports.handler = async (event) => {
+
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -11,25 +15,16 @@ exports.handler = async (event) => {
   }
 
   if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers,
-      body: JSON.stringify({ error: 'Method not allowed' }),
-    };
+    return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-
   if (!apiKey) {
-    return {
-      statusCode: 500,
-      headers,
-      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY is missing in Netlify' }),
-    };
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'Server configuration error' }) };
   }
 
   try {
-    const body = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -41,25 +36,20 @@ exports.handler = async (event) => {
       body: JSON.stringify(body),
     });
 
-    const text = await response.text();
+    const data = await response.json();
 
-console.log('Anthropic status:', response.status);
-console.log('Anthropic response:', text);
-
-return {
+    return {
       statusCode: response.status,
       headers,
-      body: text,
+      body: JSON.stringify(data),
     };
 
   } catch (err) {
+    console.error('Proxy error:', err.message);
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({
-        error: 'Proxy error',
-        details: err.message,
-      }),
+      body: JSON.stringify({ error: 'Internal server error' }),
     };
   }
 };
